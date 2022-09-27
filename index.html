@@ -1,0 +1,169 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Floppy Bird - Crappy clone</title>
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" width="480" height="300"></canvas>
+    <button id="restart" hidden>Restart</button>
+
+    <!-- Bird related logic -->
+    <script src="bird.js"></script>
+
+    <!-- Pipe related logic -->
+    <script src="pipe.js"></script>
+
+    <!-- Main -->
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const resetButtonEl = document.getElementById('restart');
+      
+      resetButtonEl.addEventListener('click', () => {
+        // Reset game state
+        frameNum = 0;
+        bird.reset();
+        pipeHandler.reset();
+
+        // Start again
+        gameLoop();
+
+        resetButtonEl.hidden = true;        
+      }); 
+      
+      // Load images used for game
+      const birdImg = new Image(34, 26);
+      birdImg.src = "images/bird.png";
+
+      const topPipeImg = new Image(52, 400);
+      topPipeImg.src = "images/toppipe.png";
+
+      const botPipeImg = new Image(52, 400);
+      botPipeImg.src = "images/botpipe.png";
+
+      // DONE: make color instead of sound part of Bird constructor
+      const bird = new Bird(50, 50, 20, birdImg);
+
+      // const pipe1 = new Pipe(100, 50, 'blue', ctx.canvas.height);
+      // const pipe2 = new Pipe(180, 50, 'blue', ctx.canvas.height);
+      // const pipe3 = new Pipe(250, 50, 'blue', ctx.canvas.height);
+
+      // Using pipehandler instead
+      const startPos = ctx.canvas.width;
+      const pipeHandler = new PipeHandler(
+        startPos,
+        50,
+        ctx.canvas.width,
+        ctx.canvas.height,
+        {top: topPipeImg, bot: botPipeImg},
+      );
+
+      function checkCollision(bird, pipe) {
+        // DONE: check for collsion between bird and pipe
+
+        // DONE: make boolean variabel that checks if bird is out of canvas
+        const isBirdOutOfCanvas = bird.y + bird.size > ctx.canvas.height || bird.y < 0;
+        if (isBirdOutOfCanvas) {
+            return true;
+        }
+
+        const isXOverlapping =
+          bird.x + bird.size > pipe.x && bird.x < pipe.x + pipe.width;
+
+        const isYTopOverlapping =
+          bird.y + bird.size > 0 && bird.y < pipe.topHeight;
+
+        const isCollidingWithTopPipe = isXOverlapping && isYTopOverlapping;
+        
+        if (isCollidingWithTopPipe) {
+            return true;
+        }
+
+        const isYBottomOverlapping =
+          bird.y + bird.size > ctx.canvas.height - pipe.bottomHeight &&
+          bird.y + bird.size < ctx.canvas.height;
+
+        const isCollidingWithBottomPipe = isXOverlapping && isYBottomOverlapping;
+        
+        if (isCollidingWithBottomPipe) {
+            return true;
+        }
+
+        // console.log('overlaps', isXOverlapping, isYTopOverlapping, isYBottomOverlapping);
+
+        // console.log('is colliding on top pipe', isXOverlapping && isYTopOverlapping);
+
+        // console.log('is colliding on bottom pipe', isXOverlapping && isYBottomOverlapping);
+
+        return false;
+      }
+
+      function drawText(ctx, str, font, align, x, y) {
+        ctx.font = font;
+        ctx.fillStyle = 'black';
+        ctx.textAlign = align;
+        ctx.fillText(str, x, y);
+      }
+
+      // Game Loop
+      let frameNum = 0;
+      function gameLoop() {
+        // OK: reset canvas
+        // mdn web docs
+        ctx.reset();
+
+        // Do lots of stuff
+        // --- draw
+        // pipe1.draw(ctx);
+        // pipe2.draw(ctx);
+        // pipe3.draw(ctx);
+        pipeHandler.draw(ctx);
+
+        bird.draw(ctx);
+
+        // ctx.font = '24px serif';
+        // ctx.fillStyle = 'black';
+        // ctx.textAlign = "start";
+        // ctx.fillText(`points: ${frameNum}`, 2, 24);
+        drawText(ctx, `points: ${frameNum}`, "24px serif", "start", 2, 24);
+
+        // --- update game world
+        // bird.y++;
+        bird.update();
+        const speedFactor = frameNum / 100;
+        pipeHandler.update(speedFactor);
+
+        // DONE: if we have collided we should stop making new frames
+        // and exit from the function.
+        if (checkCollision(bird, pipeHandler.pipes[0])) {
+            // DONE: Draw text of game over
+            // ctx.font = '48px serif';
+            // ctx.fillStyle = 'black';
+            // ctx.textAlign = "center";
+            // ctx.fillText('Game over', ctx.canvas.width/2, ctx.canvas.height/2);
+            drawText(ctx, "Game Over", '48px serif', "center", ctx.canvas.width/2, ctx.canvas.height/2);
+            document.getElementById('restart').hidden = false;
+            return;
+        }
+
+        frameNum++;
+        // call myself again
+        requestAnimationFrame(gameLoop);
+      }
+
+      window.addEventListener("keydown", (e) => {
+        // bird.y -= 20;
+        bird.flop();
+      });
+
+      gameLoop();
+    </script>
+  </body>
+</html>
